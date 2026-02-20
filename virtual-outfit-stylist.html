@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virtual Outfit Stylist</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Bebas+Neue&family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050508;
+      --surface: #0d0d14;
+      --surface2: #141420;
+      --border: #1e1e30;
+      --accent: #ff2d6e;
+      --accent2: #7c3aff;
+      --accent3: #00e5c8;
+      --text: #f0eeff;
+      --muted: #6b6b90;
+      --glow: rgba(255,45,110,0.4);
+      --glow2: rgba(124,58,255,0.3);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Manrope', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(124,58,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(124,58,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.12;
+    }
+    .blob1 { width: 600px; height: 600px; background: var(--accent2); top: -200px; right: -150px; animation: drift 15s ease-in-out infinite; }
+    .blob2 { width: 500px; height: 500px; background: var(--accent); bottom: -150px; left: -100px; animation: drift 18s ease-in-out infinite reverse; }
+
+    @keyframes drift {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(40px,-50px) scale(1.05); }
+      66% { transform: translate(-30px, 30px) scale(0.95); }
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      letter-spacing: 0.15em;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .badge {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--accent3);
+      border: 1px solid var(--accent3);
+      padding: 6px 12px;
+      border-radius: 4px;
+      letter-spacing: 0.1em;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .hero h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 3rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(90deg, var(--accent3), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      backdrop-filter: blur(10px);
+    }
+
+    .panel-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--accent3);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'Manrope', sans-serif;
+      font-size: 0.95rem;
+      transition: all 0.3s;
+    }
+
+    select:hover, input:hover {
+      border-color: var(--accent2);
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--accent3);
+      box-shadow: 0 0 0 3px rgba(0, 229, 200, 0.1);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 14px 24px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .btn-generate {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 100%);
+      color: white;
+      margin-top: 12px;
+    }
+
+    .btn-generate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px var(--glow);
+    }
+
+    .btn-generate:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-download {
+      background: var(--surface2);
+      border: 1px solid var(--accent3);
+      color: var(--accent3);
+      flex: 1;
+    }
+
+    .btn-download:hover {
+      background: rgba(0, 229, 200, 0.1);
+    }
+
+    .output-container {
+      display: none;
+    }
+
+    .output-container.active {
+      display: block;
+    }
+
+    .mood-board {
+      margin-bottom: 24px;
+    }
+
+    .outfit-visual {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      padding: 40px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .outfit-item {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      width: 100%;
+      max-width: 280px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      animation: slideIn 0.6s ease-in-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .outfit-item-image {
+      width: 100%;
+      height: 120px;
+      border-radius: 6px;
+      background-size: cover;
+      background-position: center;
+      margin-bottom: 12px;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      position: relative;
+      overflow: hidden;
+      font-weight: 300;
+      letter-spacing: 2px;
+    }
+
+    .outfit-item-name {
+      font-weight: 600;
+      color: #2C3E50;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+
+    .outfit-item-desc {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .outfit-description {
+      color: white;
+      margin-top: 20px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .color-palette {
+      margin-bottom: 24px;
+    }
+
+    .color-palette-title {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .color-swatch {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.08);
+      border-color: var(--accent3);
+    }
+
+    .color-label {
+      position: absolute;
+      bottom: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      color: var(--muted);
+      opacity: 0;
+      transition: opacity 0.3s;
+      white-space: nowrap;
+    }
+
+    .color-swatch:hover .color-label {
+      opacity: 1;
+    }
+
+    .accessories-section {
+      margin-bottom: 20px;
+    }
+
+    .accessories-title {
+      font-size: 0.85rem;
+      color: var(--accent3);
+      margin-bottom: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    .accessories-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .accessory-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .accessory-item:hover {
+      border-color: var(--accent3);
+      background: rgba(0, 229, 200, 0.05);
+    }
+
+    .accessory-icon {
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    .accessory-name {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .mood-label {
+      font-size: 0.75rem;
+      color: var(--accent3);
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: rgba(0,229,200,0.1);
+      border: 1px solid var(--accent3);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .status.active {
+      display: flex;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--accent3);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .color-grid { grid-template-columns: repeat(4, 1fr); }
+      .accessories-grid { grid-template-columns: repeat(2, 1fr); }
+      .hero h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <div class="container">
+    <header>
+      <div class="logo">OUTFIT STYLIST</div>
+      <div class="badge">AI STYLE GUIDE v1.0</div>
+    </header>
+
+    <div class="hero">
+      <h1>Virtual <span>Outfit Stylist</span></h1>
+      <p>Get personalized outfit recommendations based on occasion and weather. Complete with accessories and color palettes.</p>
+    </div>
+
+    <div class="layout">
+      <!-- INPUT PANEL -->
+      <div class="panel">
+        <div class="panel-title">✨ Style Parameters</div>
+
+        <div class="form-group">
+          <label for="occasion">Occasion</label>
+          <select id="occasion">
+            <option value="">Select an occasion...</option>
+            <option value="Job Interview">Job Interview</option>
+            <option value="Casual Outing">Casual Outing</option>
+            <option value="Dinner Date">Dinner Date</option>
+            <option value="Business Meeting">Business Meeting</option>
+            <option value="Beach Trip">Beach Trip</option>
+            <option value="Party/Nightlife">Party/Nightlife</option>
+            <option value="Gym/Workout">Gym/Workout</option>
+            <option value="Wedding">Wedding</option>
+            <option value="Brunch with Friends">Brunch with Friends</option>
+            <option value="Outdoor Hike">Outdoor Hike</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="weather">Weather</label>
+          <select id="weather">
+            <option value="">Select weather...</option>
+            <option value="Hot & Sunny">Hot & Sunny</option>
+            <option value="Warm & Clear">Warm & Clear</option>
+            <option value="Cool & Breezy">Cool & Breezy</option>
+            <option value="Cold & Crisp">Cold & Crisp</option>
+            <option value="Rainy">Rainy</option>
+            <option value="Snowy">Snowy</option>
+            <option value="Humid">Humid</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="skinTone">Skin Tone (for colors)</label>
+          <select id="skinTone">
+            <option value="">Select skin tone...</option>
+            <option value="Fair">Fair</option>
+            <option value="Medium">Medium</option>
+            <option value="Deep">Deep</option>
+            <option value="Olive">Olive</option>
+          </select>
+        </div>
+
+        <button class="btn btn-generate" id="generateBtn" onclick="generateOutfit()">
+          ✨ Generate Outfit
+        </button>
+      </div>
+
+      <!-- OUTPUT PANEL -->
+      <div class="panel">
+        <div class="panel-title" id="outputTitle">🎨 Your Mood Board</div>
+
+        <div class="status" id="status">
+          <div class="spinner"></div>
+          <span>Styling your outfit...</span>
+        </div>
+
+        <div id="outputContainer" style="text-align: center; color: var(--muted); padding: 60px 20px;">
+          Fill in the mood, occasion, and weather to generate your perfect outfit
+        </div>
+
+        <div class="output-container" id="outputContent">
+          <!-- Mood Board Section -->
+          <div class="mood-board">
+            <div class="outfit-visual" id="outfitVisual">
+              <div class="outfit-item" id="topSection">
+                <div class="outfit-item-image" id="topImage"></div>
+                <div class="outfit-item-name" id="topName">--</div>
+                <div class="outfit-item-desc" id="topDesc">--</div>
+              </div>
+              <div class="outfit-item" id="bottomSection">
+                <div class="outfit-item-image" id="bottomImage"></div>
+                <div class="outfit-item-name" id="bottomName">--</div>
+                <div class="outfit-item-desc" id="bottomDesc">--</div>
+              </div>
+              <div class="outfit-item" id="footwearSection">
+                <div class="outfit-item-image" id="footwearImage"></div>
+                <div class="outfit-item-name" id="footwearName">--</div>
+                <div class="outfit-item-desc" id="footwearDesc">--</div>
+              </div>
+            </div>
+            <div class="outfit-description" id="outfitDescription"></div>
+          </div>
+
+          <!-- Color Palette -->
+          <div class="color-palette">
+            <div class="color-palette-title">Recommended Colors</div>
+            <div class="color-grid" id="colorGrid"></div>
+          </div>
+
+          <!-- Accessories -->
+          <div class="accessories-section">
+            <div class="accessories-title">Must-Have Accessories</div>
+            <div class="accessories-grid" id="accessoriesGrid"></div>
+          </div>
+
+          <!-- Controls -->
+          <div class="controls">
+            <button class="btn btn-download" id="saveBtn" onclick="saveOutfit()">💾 Save Outfit</button>
+            <button class="btn btn-download" id="printBtn" onclick="printOutfit()">🖨 Print</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const outfitData = {
+      'Job Interview': {
+        'Hot & Sunny': {
+          top: '👔 Blazer (Light Color)',
+          bottom: '👖 Tailored Trousers',
+          footwear: '👠 Professional Heels/Oxfords',
+          colors: ['#E8E8E8', '#2C3E50', '#1ABC9C', '#F39C12'],
+          accessories: ['Watch', 'Briefcase', 'Tie/Scarf', 'Sunglasses', 'Belt', 'Pearl Necklace'],
+          vibe: 'Professional & Confident'
+        },
+        'Warm & Clear': {
+          top: '👔 Lightweight Blazer',
+          bottom: '👖 Light Dress Pants',
+          footwear: '👞 Professional Loafers',
+          colors: ['#ECF0F1', '#2C3E50', '#F39C12', '#3498DB'],
+          accessories: ['Watch', 'Briefcase', 'Tie', 'Sunglasses'],
+          vibe: 'Professional & Comfortable'
+        },
+        'Cool & Breezy': {
+          top: '👔 Blazer with Shirt',
+          bottom: '👖 Dress Pants',
+          footwear: '👞 Loafers/Heels',
+          colors: ['#34495E', '#ECF0F1', '#3498DB', '#95A5A6'],
+          accessories: ['Watch', 'Briefcase', 'Cardigan', 'Minimalist Jewelry', 'Portfolio'],
+          vibe: 'Polished & Prepared'
+        },
+        'Cold & Crisp': {
+          top: '🧥 Wool Blazer',
+          bottom: '👖 Dark Dress Pants',
+          footwear: '👠 Heels with Tights',
+          colors: ['#2C3E50', '#34495E', '#95A5A6', '#7F8C8D'],
+          accessories: ['Scarf', 'Gloves', 'Watch', 'Briefcase', 'Umbrella'],
+          vibe: 'Elegant & Warm'
+        },
+        'Rainy': {
+          top: '🧥 Waterproof Blazer',
+          bottom: '👖 Dark Trousers',
+          footwear: '👞 Waterproof Shoes',
+          colors: ['#2C3E50', '#34495E', '#7F8C8D', '#16A085'],
+          accessories: ['Umbrella', 'Leather Bag', 'Scarf', 'Gloves', 'Watch'],
+          vibe: 'Professional & Weather-Ready'
+        },
+        'Snowy': {
+          top: '🧥 Thick Blazer Coat',
+          bottom: '👖 Warm Pants',
+          footwear: '👢 Professional Winter Boots',
+          colors: ['#2C3E50', '#E8E8E8', '#34495E', '#95A5A6'],
+          accessories: ['Scarf', 'Gloves', 'Hat', 'Watch', 'Leather Bag'],
+          vibe: 'Sophisticated & Warm'
+        },
+        'Humid': {
+          top: '👔 Lightweight Blazer',
+          bottom: '👖 Breathable Pants',
+          footwear: '👠 Comfortable Heels',
+          colors: ['#ECF0F1', '#2C3E50', '#3498DB', '#F39C12'],
+          accessories: ['Watch', 'Briefcase', 'Tie', 'Sunglasses'],
+          vibe: 'Professional & Fresh'
+        }
+      },
+      'Casual Outing': {
+        'Hot & Sunny': {
+          top: '👕 Light T-Shirt/Tank',
+          bottom: '👖 Denim Shorts',
+          footwear: '👟 Sneakers/Sandals',
+          colors: ['#3498DB', '#F39C12', '#E74C3C', '#2ECC71'],
+          accessories: ['Cap', 'Sunglasses', 'Backpack', 'Watch', 'Bracelet'],
+          vibe: 'Relaxed & Vibrant'
+        },
+        'Warm & Clear': {
+          top: '👕 Light Shirt',
+          bottom: '👖 Casual Shorts',
+          footwear: '👟 Comfortable Sneakers',
+          colors: ['#2ECC71', '#3498DB', '#F39C12', '#E8E8E8'],
+          accessories: ['Cap', 'Sunglasses', 'Casual Bag', 'Bracelets'],
+          vibe: 'Easy & Breezy'
+        },
+        'Cool & Breezy': {
+          top: '👕 Sweater/Hoodie',
+          bottom: '👖 Jeans',
+          footwear: '👟 Sneakers',
+          colors: ['#E67E22', '#95A5A6', '#2C3E50', '#1ABC9C'],
+          accessories: ['Beanie', 'Crossbody Bag', 'Casual Watch', 'Rings'],
+          vibe: 'Cozy & Comfortable'
+        },
+        'Cold & Crisp': {
+          top: '🧥 Warm Jacket',
+          bottom: '👖 Jeans',
+          footwear: '👢 Boots',
+          colors: ['#34495E', '#7F8C8D', '#2C3E50', '#95A5A6'],
+          accessories: ['Scarf', 'Beanie', 'Gloves', 'Crossbody Bag'],
+          vibe: 'Cozy & Warm'
+        },
+        'Rainy': {
+          top: '🧥 Jacket/Raincoat',
+          bottom: '👖 Inseam Jeans',
+          footwear: '🥾 Boots',
+          colors: ['#34495E', '#16A085', '#7F8C8D', '#BDC3C7'],
+          accessories: ['Umbrella', 'Waterproof Bag', 'Scarf', 'Beanie'],
+          vibe: 'Practical & Stylish'
+        },
+        'Snowy': {
+          top: '🧥 Thick Winter Coat',
+          bottom: '👖 Warm Jeans',
+          footwear: '🥾 Winter Boots',
+          colors: ['#2C3E50', '#E8E8E8', '#95A5A6', '#34495E'],
+          accessories: ['Scarf', 'Beanie', 'Gloves', 'Thermal Bag'],
+          vibe: 'Warm & Cozy'
+        },
+        'Humid': {
+          top: '👕 Breathable T-Shirt',
+          bottom: '👖 Light Shorts',
+          footwear: '👟 Breathable Sneakers',
+          colors: ['#2ECC71', '#3498DB', '#F39C12', '#ECF0F1'],
+          accessories: ['Cap', 'Backpack', 'Sunglasses', 'Watch'],
+          vibe: 'Fresh & Light'
+        }
+      },
+      'Dinner Date': {
+        'Hot & Sunny': {
+          top: '👗 Light Summer Dress',
+          bottom: '👖 Elegant Skirt',
+          footwear: '👠 Dressy Heels',
+          colors: ['#E74C3C', '#F39C12', '#9B59B6', '#1ABC9C'],
+          accessories: ['Clutch', 'Jewelry', 'Perfume', 'Hair Accessory', 'Heels'],
+          vibe: 'Elegant & Sophisticated'
+        },
+        'Warm & Clear': {
+          top: '👗 Light Elegant Dress',
+          bottom: '👖 Flowing Skirt',
+          footwear: '👠 Strappy Heels',
+          colors: ['#E74C3C', '#FFB6C1', '#9B59B6', '#ECF0F1'],
+          accessories: ['Statement Necklace', 'Clutch', 'Ring', 'Bracelet'],
+          vibe: 'Romantic & Fluid'
+        },
+        'Cool & Breezy': {
+          top: '👗 Long-sleeve Dress',
+          bottom: '👖 Elegant Pants',
+          footwear: '👠 Heels',
+          colors: ['#8E44AD', '#C0392B', '#2C3E50', '#ECF0F1'],
+          accessories: ['Statement Necklace', 'Mini Bag', 'Ring', 'Earrings'],
+          vibe: 'Romance & Style'
+        },
+        'Cold & Crisp': {
+          top: '👗 Dress with Tights',
+          bottom: '👖 Wool Skirt',
+          footwear: '👠 Heels',
+          colors: ['#8E44AD', '#2C3E50', '#C0392B', '#95A5A6'],
+          accessories: ['Shawl', 'Elegant Bag', 'Wrap', 'Bracelet'],
+          vibe: 'Warm & Romantic'
+        },
+        'Rainy': {
+          top: '👗 Chic Dress with Cardigan',
+          bottom: '👖 Tights',
+          footwear: '👠 Waterproof Heels',
+          colors: ['#34495E', '#C0392B', '#95A5A6', '#2C3E50'],
+          accessories: ['Shawl', 'Elegant Umbrella', 'Bracelet', 'Heels'],
+          vibe: 'Poised & Enchanting'
+        },
+        'Snowy': {
+          top: '👗 Elegant Dress',
+          bottom: '👖 Thermal Tights',
+          footwear: '👢 Elegant Winter Boots',
+          colors: ['#8E44AD', '#E8E8E8', '#C0392B', '#2C3E50'],
+          accessories: ['Wrap', 'Gloves', 'Elegant Bag', 'Jewelry'],
+          vibe: 'Sophisticated & Warm'
+        },
+        'Humid': {
+          top: '👗 Light Breathable Dress',
+          bottom: '👖 Silk Pants',
+          footwear: '👠 Dressy Heels',
+          colors: ['#E74C3C', '#F39C12', '#9B59B6', '#ECF0F1'],
+          accessories: ['Clutch', 'Jewelry', 'Ring', 'Bracelet'],
+          vibe: 'Elegant & Fresh'
+        }
+      },
+      'Beach Trip': {
+        'Hot & Sunny': {
+          top: '🩱 Bikini/Swimsuit',
+          bottom: '👖 Beach Shorts',
+          footwear: '🩴 Flip-flops/Sandals',
+          colors: ['#3498DB', '#2ECC71', '#F39C12', '#E74C3C'],
+          accessories: ['Sunglasses', 'Hat', 'Sunscreen', 'Beach Bag', 'Jewelry'],
+          vibe: 'Fun & Refreshing'
+        },
+        'Warm & Clear': {
+          top: '👕 Lightweight Shirt',
+          bottom: '👖 Linen Pants',
+          footwear: '🩴 Sandals',
+          colors: ['#F39C12', '#1ABC9C', '#3498DB', '#E8E8E8'],
+          accessories: ['Scarf', 'Cap', 'Bag', 'Sunglasses', 'Jewelry'],
+          vibe: 'Tropical & Breezy'
+        },
+        'Cool & Breezy': {
+          top: '👕 Beach Cover-up Shirt',
+          bottom: '👖 Beach Shorts',
+          footwear: '🩴 Sandals',
+          colors: ['#16A085', '#ECF0F1', '#3498DB', '#2ECC71'],
+          accessories: ['Scarf', 'Hat', 'Beach Bag', 'Sunglasses'],
+          vibe: 'Casual Beach Vibes'
+        },
+        'Cold & Crisp': {
+          top: '🧥 Light Jacket for Beach',
+          bottom: '👖 Comfortable Pants',
+          footwear: '👟 Comfortable Shoes',
+          colors: ['#34495E', '#95A5A6', '#16A085', '#E8E8E8'],
+          accessories: ['Scarf', 'Hat', 'Bag', 'Sunglasses'],
+          vibe: 'Cool Coastal Look'
+        },
+        'Rainy': {
+          top: '🧥 Waterproof Jacket',
+          bottom: '👖 Quick-Dry Pants',
+          footwear: '👟 Water Shoes',
+          colors: ['#34495E', '#2ECC71', '#16A085', '#7F8C8D'],
+          accessories: ['Umbrella', 'Waterproof Bag', 'Hat', 'Protective Eyewear'],
+          vibe: 'Prepared & Adventurous'
+        },
+        'Snowy': {
+          top: '🧥 Warm Beach Jacket',
+          bottom: '👖 Thermal Pants',
+          footwear: '👢 Beach Boots',
+          colors: ['#2C3E50', '#E8E8E8', '#95A5A6', '#34495E'],
+          accessories: ['Scarf', 'Beanie', 'Gloves', 'Bag'],
+          vibe: 'Winter Beach Walk'
+        },
+        'Humid': {
+          top: '👕 Breezy Beach Shirt',
+          bottom: '👖 Light Shorts',
+          footwear: '🩴 Sandals',
+          colors: ['#3498DB', '#2ECC71', '#F39C12', '#ECF0F1'],
+          accessories: ['Hat', 'Sunglasses', 'Beach Bag', 'Jewelry'],
+          vibe: 'Tropical & Light'
+        }
+      },
+      'Party/Nightlife': {
+        'Hot & Sunny': {
+          top: '👗 Sequined Top',
+          bottom: '👖 Shorts/Skirt',
+          footwear: '👠 Statement Heels',
+          colors: ['#E74C3C', '#F39C12', '#9B59B6', '#1ABC9C'],
+          accessories: ['Clutch', 'Bold Jewelry', 'Heels', 'Bracelet', 'Ring'],
+          vibe: 'Glamorous & Confident'
+        },
+        'Warm & Clear': {
+          top: '👗 Sequin/Metallic Top',
+          bottom: '👖 Stylish Shorts',
+          footwear: '👠 Statement Heels',
+          colors: ['#F39C12', '#1ABC9C', '#9B59B6', '#E8E8E8'],
+          accessories: ['Statement Bag', 'Bold Jewelry', 'Ring', 'Sunglasses'],
+          vibe: 'Bold & Radiant'
+        },
+        'Cool & Breezy': {
+          top: '👗 Dress/Blouse',
+          bottom: '👖 Skirt/Pants',
+          footwear: '👠 Heels',
+          colors: ['#8E44AD', '#C0392B', '#1ABC9C', '#2C3E50'],
+          accessories: ['Leather Jacket', 'Statement Bag', 'Bold Jewelry', 'Makeup'],
+          vibe: 'Bold & Trendy'
+        },
+        'Cold & Crisp': {
+          top: '👗 Dress with Jacket',
+          bottom: '👖 Elegant Pants',
+          footwear: '👠 Heels',
+          colors: ['#8E44AD', '#2C3E50', '#C0392B', '#ECF0F1'],
+          accessories: ['Leather Jacket', 'Scarf', 'Bold Jewelry', 'Clutch'],
+          vibe: 'Sophisticated Party Look'
+        },
+        'Rainy': {
+          top: '👗 Dress with Jacket',
+          bottom: '👖 Boots/Heels',
+          footwear: '👢 Stylish Boots',
+          colors: ['#34495E', '#E74C3C', '#2C3E50', '#95A5A6'],
+          accessories: ['Leather Jacket', 'Umbrella', 'Statement Bag', 'Heels'],
+          vibe: 'Edgy & Chic'
+        },
+        'Snowy': {
+          top: '👗 Dress',
+          bottom: '👖 Thermal Tights',
+          footwear: '👢 Stylish Winter Boots',
+          colors: ['#8E44AD', '#E8E8E8', '#C0392B', '#2C3E50'],
+          accessories: ['Wrap', 'Bold Jewelry', 'Statement Bag', 'Gloves'],
+          vibe: 'Glamorous Winter Party'
+        },
+        'Humid': {
+          top: '👗 Sequined Top',
+          bottom: '👖 Shorts',
+          footwear: '👠 Glamorous Heels',
+          colors: ['#E74C3C', '#F39C12', '#9B59B6', '#ECF0F1'],
+          accessories: ['Clutch', 'Bold Jewelry', 'Ring', 'Bracelet'],
+          vibe: 'Glamorous & Fresh'
+        }
+      },
+      'Wedding': {
+        'Hot & Sunny': {
+          top: '👗 Elegant Dress',
+          bottom: '👖 Flowery Skirt',
+          footwear: '👠 Dressy Heels',
+          colors: ['#E8E8E8', '#FFB6C1', '#FFE4E1', '#FFF0F5'],
+          accessories: ['Statement Jewelry', 'elegant Bag', 'Fascinator', 'Hat', 'Heels'],
+          vibe: 'Graceful & Refined'
+        },
+        'Warm & Clear': {
+          top: '👗 Elegant Light Dress',
+          bottom: '👖 Flowing Skirt',
+          footwear: '👠 Dressy Heels',
+          colors: ['#FFB6C1', '#FFF0F5', '#E8E8E8', '#F39C12'],
+          accessories: ['Hat', 'Jewelry', 'Elegant Bag', 'Hair Accessory'],
+          vibe: 'Romantic & Elegant'
+        },
+        'Cool & Breezy': {
+          top: '👗 Formal Gown/Dress',
+          bottom: '👖 Elegant Skirt',
+          footwear: '👠 Heels',
+          colors: ['#34495E', '#E8E8E8', '#A569BD', '#FFB6C1'],
+          accessories: ['Shawl', 'Jewelry', 'Elegant Bag', 'Hair Accessory'],
+          vibe: 'Sophisticated & Timeless'
+        },
+        'Cold & Crisp': {
+          top: '👗 Formal Dress',
+          bottom: '👖 Elegant Skirt',
+          footwear: '👠 Heels',
+          colors: ['#34495E', '#E8E8E8', '#A569BD', '#FFB6C1'],
+          accessories: ['Wrap', 'Shawl', 'Jewelry', 'Gloves'],
+          vibe: 'Elegant & Warm'
+        },
+        'Rainy': {
+          top: '👗 Gown with Shawl',
+          bottom: '👖 Formal Dress',
+          footwear: '👠 Special Occasion Shoes',
+          colors: ['#2C3E50', '#ECF0F1', '#8E44AD', '#C0392B'],
+          accessories: ['Elegant Umbrella', 'Wrap', 'Jewelry', 'Clutch'],
+          vibe: 'Elegant & Prepared'
+        },
+        'Snowy': {
+          top: '👗 Formal Gown',
+          bottom: '👖 Winter Formal Skirt',
+          footwear: '👢 Winter Formal Boots',
+          colors: ['#34495E', '#E8E8E8', '#A569BD', '#FFB6C1'],
+          accessories: ['Wrap', 'Gloves', 'Jewelry', 'Elegant Bag'],
+          vibe: 'Winter Elegance'
+        },
+        'Humid': {
+          top: '👗 Light Formal Dress',
+          bottom: '👖 Flowing Skirt',
+          footwear: '👠 Dressy Heels',
+          colors: ['#E8E8E8', '#FFB6C1', '#FFE4E1', '#ECF0F1'],
+          accessories: ['Jewelry', 'Elegant Bag', 'Hair Accessory', 'Ring'],
+          vibe: 'Elegant & Fresh'
+        }
+      },
+      'Gym/Workout': {
+        'Hot & Sunny': {
+          top: '👕 Sports Tank/Shirt',
+          bottom: '👖 Shorts',
+          footwear: '👟 Running Shoes',
+          colors: ['#E74C3C', '#2ECC71', '#3498DB', '#F39C12'],
+          accessories: ['Water Bottle', 'Headphones', 'Sports Watch', 'Workout Bag'],
+          vibe: 'Active & Energetic'
+        },
+        'Warm & Clear': {
+          top: '👕 Light Athletic Shirt',
+          bottom: '👖 Athletic Shorts',
+          footwear: '👟 Running Shoes',
+          colors: ['#2ECC71', '#3498DB', '#F39C12', '#E8E8E8'],
+          accessories: ['Water Bottle', 'Headphones', 'Gym Bag', 'Sports Watch'],
+          vibe: 'Active & Breezy'
+        },
+        'Cool & Breezy': {
+          top: '👕 Long-sleeve Athletic Shirt',
+          bottom: '👖 Leggings',
+          footwear: '👟 Sneakers',
+          colors: ['#3498DB', '#2C3E50', '#95A5A6', '#2ECC71'],
+          accessories: ['Sports Jacket', 'Headphones', 'Gym Bag', 'Water Bottle'],
+          vibe: 'Fit & Focused'
+        },
+        'Cold & Crisp': {
+          top: '🧥 Warm Athletic Jacket',
+          bottom: '👖 Thermal Leggings',
+          footwear: '👟 Warm Athletic Shoes',
+          colors: ['#2C3E50', '#95A5A6', '#34495E', '#3498DB'],
+          accessories: ['Beanie', 'Gloves', 'Gym Bag', 'Water Bottle'],
+          vibe: 'Warm & Active'
+        },
+        'Rainy': {
+          top: '🧥 Moisture-Wicking Jacket',
+          bottom: '👖 Leggings',
+          footwear: '👟 Trail Shoes',
+          colors: ['#34495E', '#16A085', '#7F8C8D', '#2C3E50'],
+          accessories: ['Waterproof Bag', 'Reflective Wear', 'Headband', 'Water Bottle'],
+          vibe: 'Determined & Protected'
+        },
+        'Snowy': {
+          top: '🧥 Thick Athletic Jacket',
+          bottom: '👖 Warm Leggings',
+          footwear: '👟 Winter Athletic Shoes',
+          colors: ['#2C3E50', '#E8E8E8', '#95A5A6', '#34495E'],
+          accessories: ['Beanie', 'Gloves', 'Thermal Bag', 'Water Bottle'],
+          vibe: 'Winter Warrior'
+        },
+        'Humid': {
+          top: '👕 Moisture-Wicking Tank',
+          bottom: '👖 Breathable Shorts',
+          footwear: '👟 Running Shoes',
+          colors: ['#E74C3C', '#2ECC71', '#3498DB', '#ECF0F1'],
+          accessories: ['Water Bottle', 'Headphones', 'Gym Bag', 'Sports Watch'],
+          vibe: 'Active & Light'
+        }
+      }
+    };
+
+    let currentOutfit = null;
+
+    // Emoji fallbacks for clothing items
+    const clothingEmojis = {
+      'blazer': '🧥',
+      'shirt': '👕',
+      'dress': '👗',
+      'skirt': '👗',
+      'trousers': '👖',
+      'pants': '👖',
+      'jeans': '👖',
+      'shorts': '👖',
+      'tank': '👕',
+      'top': '👕',
+      'jacket': '🧥',
+      'coat': '🧥',
+      'boots': '👢',
+      'heels': '👠',
+      'shoes': '👞',
+      'loafers': '👞',
+      'sneakers': '👟',
+      'sandals': '🩴',
+      'flops': '🩴'
+    };
+
+    function getEmojiForClothing(clothingType) {
+      const type = clothingType.toLowerCase();
+      for (let key in clothingEmojis) {
+        if (type.includes(key)) {
+          return clothingEmojis[key];
+        }
+      }
+      return '👗';
+    }
+
+    function generateOutfit() {
+      const occasion = document.getElementById('occasion').value;
+      const weather = document.getElementById('weather').value;
+      const skinTone = document.getElementById('skinTone').value;
+
+      if (!occasion || !weather || !skinTone) {
+        alert('Please select all options');
+        return;
+      }
+
+      document.getElementById('status').classList.add('active');
+      document.getElementById('generateBtn').disabled = true;
+
+      setTimeout(() => {
+        try {
+          // Get outfit - use fallback if combination doesn't exist
+          let outfit = null;
+          let actualWeather = weather;
+          
+          if (outfitData[occasion] && outfitData[occasion][weather]) {
+            outfit = outfitData[occasion][weather];
+          } else if (outfitData[occasion]) {
+            // Use first available weather for this occasion
+            actualWeather = Object.keys(outfitData[occasion])[0];
+            outfit = outfitData[occasion][actualWeather];
+          }
+
+          if (!outfit) {
+            alert('Sorry, that combination is not available. Please try another.');
+            document.getElementById('status').classList.remove('active');
+            document.getElementById('generateBtn').disabled = false;
+            return;
+          }
+
+          currentOutfit = { occasion, weather: actualWeather, skinTone, ...outfit };
+
+          // Update visual with proper images
+          document.getElementById('outfitVisual').style.background = 'linear-gradient(135deg, ' + outfit.colors[1] + ' 0%, ' + outfit.colors[0] + ' 100%)';
+          
+          // Top
+          const topEmoji = getEmojiForClothing(outfit.top);
+          document.getElementById('topImage').textContent = topEmoji;
+          document.getElementById('topImage').style.backgroundImage = 'none';
+          document.getElementById('topImage').style.background = `linear-gradient(135deg, ${outfit.colors[2] || '#667eea'} 0%, ${outfit.colors[1] || '#764ba2'} 100%)`;
+          document.getElementById('topName').textContent = outfit.top;
+          document.getElementById('topDesc').textContent = 'Primary layering piece';
+          
+          // Bottom
+          const bottomEmoji = getEmojiForClothing(outfit.bottom);
+          document.getElementById('bottomImage').textContent = bottomEmoji;
+          document.getElementById('bottomImage').style.backgroundImage = 'none';
+          document.getElementById('bottomImage').style.background = `linear-gradient(135deg, ${outfit.colors[0] || '#667eea'} 0%, ${outfit.colors[3] || '#764ba2'} 100%)`;
+          document.getElementById('bottomName').textContent = outfit.bottom;
+          document.getElementById('bottomDesc').textContent = 'Base layering piece';
+          
+          // Footwear
+          const footwearEmoji = getEmojiForClothing(outfit.footwear);
+          document.getElementById('footwearImage').textContent = footwearEmoji;
+          document.getElementById('footwearImage').style.backgroundImage = 'none';
+          document.getElementById('footwearImage').style.background = `linear-gradient(135deg, ${outfit.colors[3] || '#667eea'} 0%, ${outfit.colors[2] || '#764ba2'} 100%)`;
+          document.getElementById('footwearName').textContent = outfit.footwear;
+          document.getElementById('footwearDesc').textContent = 'Footwear';
+          
+          const desc = `<strong>${occasion} • ${actualWeather}</strong><br>
+                        ${outfit.top}<br>
+                        ${outfit.bottom}<br>
+                        ${outfit.footwear}<br>
+                        <em style="color: var(--accent3); margin-top: 12px; display: block;">Mood: ${outfit.vibe}</em>`;
+          document.getElementById('outfitDescription').innerHTML = desc;
+
+          // Color palette
+          const colorGrid = document.getElementById('colorGrid');
+          colorGrid.innerHTML = '';
+          outfit.colors.forEach(color => {
+            const swatch = document.createElement('div');
+            swatch.className = 'color-swatch';
+            swatch.style.background = color;
+            swatch.innerHTML = `<span class="color-label">${color}</span>`;
+            colorGrid.appendChild(swatch);
+          });
+
+          // Accessories
+          const accessoriesGrid = document.getElementById('accessoriesGrid');
+          accessoriesGrid.innerHTML = '';
+          const accessories = {
+            'Watch': '⌚', 'Briefcase': '💼', 'Tie/Scarf': '🎀', 'Sunglasses': '🕶',
+            'Belt': '🪣', 'Pearl Necklace': '💎', 'Cardigan': '🧶', 'Minimalist Jewelry': '💍',
+            'Portfolio': '📋', 'Umbrella': '☂', 'Leather Bag': '👜', 'Gloves': '🧤',
+            'Cap': '🧢', 'Backpack': '🎒', 'Bracelet': '✨', 'Beanie': '🎩',
+            'Crossbody Bag': '👜', 'Rings': '💍', 'Waterproof Bag': '🎒', 'Scarf': '🧣',
+            'Clutch': '👛', 'Jewelry': '💎', 'Perfume': '💐', 'Hair Accessory': '👑',
+            'Heels': '👠', 'Statement Necklace': '💫', 'Mini Bag': '👜', 'Ring': '💎',
+            'Earrings': '✨', 'Shawl': '🧣', 'Elegant Umbrella': '☂', 'Elegant Bag': '👜',
+            'Fascinator': '✨', 'Hat': '🎩', 'Wrap': '🧣', 'Headphones': '🎧',
+            'Sports Watch': '⌚', 'Workout Bag': '🎒', 'Sports Jacket': '🧥', 'Gym Bag': '🎒',
+            'Water Bottle': '💧', 'Waterproof Wear': '🧥', 'Reflective Wear': '🦺', 'Headband': '🎽',
+            'Leather Jacket': '🧥', 'Statement Bag': '👜', 'Bold Jewelry': '💎', 'Makeup': '💄',
+            'Boots': '👢', 'Protective Eyewear': '🕶', 'Quick-Dry Pants': '👖', 'Water Shoes': '👟',
+            'Stylish Boots': '👢', 'Elegant Dress': '👗', 'Flowery Skirt': '👗',
+            'Formal Gown': '👗', 'Special Occasion Shoes': '👠', 'Trail Shoes': '👟',
+            'Moisture-Wicking Jacket': '🧥'
+          };
+
+          outfit.accessories.forEach(acc => {
+            const item = document.createElement('div');
+            item.className = 'accessory-item';
+            item.innerHTML = `<div class="accessory-icon">${accessories[acc] || '📦'}</div><div class="accessory-name">${acc}</div>`;
+            accessoriesGrid.appendChild(item);
+          });
+
+          document.getElementById('outputContainer').style.display = 'none';
+          document.getElementById('outputContent').classList.add('active');
+          document.getElementById('status').classList.remove('active');
+          document.getElementById('generateBtn').disabled = false;
+        } catch (error) {
+          console.error(error);
+          alert('Error generating outfit. Please try again.');
+          document.getElementById('status').classList.remove('active');
+          document.getElementById('generateBtn').disabled = false;
+        }
+      }, 800);
+    }
+
+    function saveOutfit() {
+      if (!currentOutfit) return;
+      const text = `${currentOutfit.occasion}\n${currentOutfit.weather}\nSkin Tone: ${currentOutfit.skinTone}\n\n${currentOutfit.top}\n${currentOutfit.bottom}\n${currentOutfit.footwear}\n\nMood: ${currentOutfit.vibe}`;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'outfit-guide.txt';
+      link.click();
+    }
+
+    function printOutfit() {
+      window.print();
+    }
+  </script>
+</body>
+</html>
